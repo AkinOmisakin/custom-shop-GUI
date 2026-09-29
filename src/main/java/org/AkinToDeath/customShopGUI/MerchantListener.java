@@ -9,7 +9,6 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityTransformEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
-import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.Inventory;
@@ -38,16 +37,20 @@ public final class MerchantListener implements Listener {
         }
         // Always cancel, so trading, name tags, leads, saddles etc. never apply to a merchant.
         event.setCancelled(true);
-        // The server reports a right-click twice (once per hand, plus an "at entity" variant); act once.
-        if (event instanceof PlayerInteractAtEntityEvent || event.getHand() != EquipmentSlot.HAND) {
+        // A right-click can be reported more than once (once per hand). This listener also receives the
+        // "at entity" variant, which comes first and, once cancelled, stops the plain event from firing.
+        // So open on whichever arrives first, main hand only, and never if a shop is already open.
+        Player player = event.getPlayer();
+        if (event.getHand() != EquipmentSlot.HAND
+                || player.getOpenInventory().getTopInventory().getHolder(false) instanceof ShopMenu) {
             return;
         }
         Merchant merchant = plugin.shopConfig().merchant(id);
         if (merchant == null) {
-            event.getPlayer().sendMessage(MINI.deserialize(plugin.shopConfig().message("merchant-gone")));
+            player.sendMessage(MINI.deserialize(plugin.shopConfig().message("merchant-gone")));
             return;
         }
-        new ShopMenu(plugin, merchant, event.getPlayer()).open(event.getPlayer());
+        new ShopMenu(plugin, merchant, player).open(player);
     }
 
     /** Nothing may hurt a merchant (invulnerability alone doesn't stop creative-mode players). */
