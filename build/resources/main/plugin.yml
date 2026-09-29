@@ -1,0 +1,18 @@
+name: custom shop GUI
+version: '1.0-SNAPSHOT'
+
+main: org.AkinToDeath.customShopGUI.CustomShopGUI
+api-version: '26.2'
+load: POSTWORLD
+
+commands:
+  rpgshop:
+    description: Place and manage RPG shop merchants
+    usage: /<command> <spawn|remove|open|list|reload>
+    aliases: [rshop]
+    permission: rpgshop.admin
+
+permissions:
+  rpgshop.admin:
+    description: Allows placing, removing and reloading shop merchants
+    default: op
