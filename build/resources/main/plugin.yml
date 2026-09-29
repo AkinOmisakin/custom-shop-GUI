@@ -1,4 +1,4 @@
-name: custom shop GUI
+name: CustomShopGUI
 version: '1.0-SNAPSHOT'
 
 main: org.AkinToDeath.customShopGUI.CustomShopGUI

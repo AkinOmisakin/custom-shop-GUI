@@ -1,4 +1,4 @@
-name: custom shop GUI
+name: CustomShopGUI
 version: '${version}'
 
 main: org.AkinToDeath.customShopGUI.CustomShopGUI
