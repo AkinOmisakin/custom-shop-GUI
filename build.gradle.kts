@@ -6,10 +6,16 @@ plugins {
 repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/")
+    // Vault's API is only published here.
+    maven("https://jitpack.io")
 }
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:26.2.build.+")
+    // Not transitive: Vault drags in an old Bukkit API that would clash with Paper's.
+    compileOnly("com.github.MilkBowl:VaultAPI:1.7.1") {
+        isTransitive = false
+    }
 }
 
 java {

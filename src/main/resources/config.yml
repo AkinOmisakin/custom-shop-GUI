@@ -21,9 +21,11 @@ settings:
 # These must match the items dropped by the RPGKillRewardSystem plugin, so
 # "material" and "name" here must equal the item "material" and "name" in ITS
 # config (write the name WITHOUT colour tags: "<gold>Zombie Coin" -> "Zombie Coin").
-#   name:    the item must have exactly this name (ignoring case). Leave it out
-#            and any item of that material counts.
+#   type:    item (default) or vault
+#   name:    item only: the item must have exactly this name (ignoring case).
+#            Leave it out and any item of that material counts.
 #   display: how the currency is written next to prices (MiniMessage)
+# Item prices must be whole numbers; Vault prices may have decimals.
 # ---------------------------------------------------------------------------
 currencies:
   zombie_coin:
@@ -35,6 +37,13 @@ currencies:
     name: "Bone Dust"
     display: "<white>Bone Dust"
 
+  # Vault money: pay from the player's balance in any economy plugin that supports
+  # Vault (EssentialsX, CMI, ...). Needs the Vault plugin plus an economy plugin installed.
+  # Uncomment, then give items "currency: gold" and a price (decimals allowed, e.g. 12.5).
+  # gold:
+  #   type: vault
+  #   display: "<yellow>Gold"
+
 # ---------------------------------------------------------------------------
 # Texts. <item>, <price>, <currency> and <have> are filled in automatically.
 # ---------------------------------------------------------------------------
@@ -45,6 +54,7 @@ messages:
   bought: "<green>You bought <item><green> for <gold><price> <currency><green>."
   not-enough: "<red>You need <gold><price> <currency><red> but only have <gold><have><red>."
   merchant-gone: "<red>This merchant has left town."
+  economy-unavailable: "<red>This merchant can't take payment right now. Tell an admin."
 
 # ---------------------------------------------------------------------------
 # Merchants. The id (e.g. "blacksmith") is what you type in /rpgshop spawn.

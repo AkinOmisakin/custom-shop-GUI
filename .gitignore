@@ -4,6 +4,7 @@ build/
 .kotlin/
 # keep the wrapper so a fresh clone can build
 !gradle/wrapper/gradle-wrapper.jar
+.vscode
 
 # --- IntelliJ IDEA ---
 .idea/

@@ -99,19 +99,26 @@ public final class ShopMenu implements InventoryHolder {
         }
     }
 
-    /** Tries to buy one item: check the coins, take them, hand over the goods. */
+    /** Tries to buy one item: check the money, take it, hand over the goods. */
     private void purchase(Player player, ShopItem item) {
+        Payments payments = plugin.payments();
         Currency currency = item.currency();
-        int have = currency.count(player.getInventory());
+        double have = payments.balance(player, currency);
         TagResolver tags = tags(item, have);
 
-        if (have < item.price()) {
+        // Vault money needs Vault and an economy plugin; say so instead of "you can't afford it".
+        if (!payments.available(currency)) {
+            player.sendMessage(MINI.deserialize(plugin.shopConfig().message("economy-unavailable"), tags));
+            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+            return;
+        }
+        // withdraw() checks the balance again and takes nothing if the player can't pay.
+        if (have < item.price() || !payments.withdraw(player, currency, item.price())) {
             player.sendMessage(MINI.deserialize(plugin.shopConfig().message("not-enough"), tags));
             player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
             return;
         }
 
-        currency.take(player.getInventory(), item.price());
         // addItem returns whatever didn't fit; drop that at the player's feet so nothing is lost.
         player.getInventory().addItem(item.create())
                 .values()
@@ -164,7 +171,7 @@ public final class ShopMenu implements InventoryHolder {
     /** The item as shown in the window: its normal look plus price and affordability lines. */
     private ItemStack forSale(ShopItem item, Player viewer) {
         ShopConfig config = plugin.shopConfig();
-        int have = item.currency().count(viewer.getInventory());
+        double have = plugin.payments().balance(viewer, item.currency());
         TagResolver tags = tags(item, have);
 
         ItemStack stack = item.create();
@@ -181,7 +188,7 @@ public final class ShopMenu implements InventoryHolder {
         return stack;
     }
 
-    /** A gold ingot listing how many of each coin this merchant accepts the player is carrying. */
+    /** A gold ingot listing how much of each currency this merchant accepts the player has. */
     private ItemStack purse(Player viewer) {
         // A merchant may accept several coins; list each one once, in the order they appear.
         Set<Currency> accepted = new LinkedHashSet<>();
@@ -193,7 +200,7 @@ public final class ShopMenu implements InventoryHolder {
         List<Component> lore = new ArrayList<>();
         for (Currency currency : accepted) {
             lore.add(line("<white><count> <currency>", TagResolver.resolver(
-                    Placeholder.unparsed("count", String.valueOf(currency.count(viewer.getInventory()))),
+                    Placeholder.unparsed("count", currency.format(plugin.payments().balance(viewer, currency))),
                     Placeholder.component("currency", MINI.deserialize(currency.display())))));
         }
         meta.lore(lore);
@@ -202,7 +209,7 @@ public final class ShopMenu implements InventoryHolder {
     }
 
     /** Fills the <item>, <price>, <currency> and <have> tags used in the config texts. */
-    private TagResolver tags(ShopItem item, int have) {
+    private TagResolver tags(ShopItem item, double have) {
         // Insert the item's name as a finished component so its colours can't leak into the rest of the message.
         ItemStack made = item.create();
         Component itemName = made.getItemMeta().hasDisplayName()
@@ -211,8 +218,8 @@ public final class ShopMenu implements InventoryHolder {
         return TagResolver.resolver(
                 Placeholder.component("item", itemName),
                 Placeholder.component("currency", MINI.deserialize(item.currency().display())),
-                Placeholder.unparsed("price", String.valueOf(item.price())),
-                Placeholder.unparsed("have", String.valueOf(have)));
+                Placeholder.unparsed("price", item.currency().format(item.price())),
+                Placeholder.unparsed("have", item.currency().format(have)));
     }
 
     private static Component line(String text, TagResolver tags) {

@@ -21,11 +21,11 @@ import java.util.Map;
  * @param name         nullable MiniMessage display name
  * @param lore         MiniMessage lines shown under the item name (may be empty)
  * @param enchantments enchantment -> level
- * @param price        how many coins it costs
- * @param currency     which coin pays for it
+ * @param price        how much it costs; a whole number for coin currencies, may have decimals for Vault money
+ * @param currency     what pays for it
  */
 public record ShopItem(String id, Material material, int amount, String name, List<String> lore,
-                       Map<Enchantment, Integer> enchantments, int price, Currency currency) {
+                       Map<Enchantment, Integer> enchantments, double price, Currency currency) {
 
     private static final MiniMessage MINI = MiniMessage.miniMessage();
 

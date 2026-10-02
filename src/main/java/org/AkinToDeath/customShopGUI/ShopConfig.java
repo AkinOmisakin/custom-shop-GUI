@@ -32,7 +32,8 @@ public final class ShopConfig {
             "cannot-buy-line", "<red>✖ You need <price> <currency>",
             "bought", "<green>You bought <item><green> for <gold><price> <currency><green>.",
             "not-enough", "<red>You need <gold><price> <currency><red> but only have <gold><have><red>.",
-            "merchant-gone", "<red>This merchant has left town.");
+            "merchant-gone", "<red>This merchant has left town.",
+            "economy-unavailable", "<red>This merchant can't take payment right now. Tell an admin.");
 
     private final Material border;
     private final Material filler;
@@ -57,6 +58,16 @@ public final class ShopConfig {
     /** A configurable text, always non-null. */
     public String message(String key) {
         return messages.getOrDefault(key, DEFAULT_MESSAGES.getOrDefault(key, ""));
+    }
+
+    /** Is any currency paid with Vault money? Used to warn at startup if no economy is there. */
+    public boolean usesVault() {
+        return vaultCurrency() != null;
+    }
+
+    /** Any one Vault currency (they all use the same economy), or null if none is configured. */
+    public Currency vaultCurrency() {
+        return currencies.values().stream().filter(c -> c.type() == Currency.Type.VAULT).findFirst().orElse(null);
     }
 
     public int itemCount() {
@@ -109,6 +120,17 @@ public final class ShopConfig {
             if (cs == null) {
                 continue;
             }
+            String typeName = cs.getString("type", "item").toUpperCase(Locale.ROOT);
+            if (typeName.equals("VAULT")) {
+                // Vault money has no item; it only needs a name for prices ("100 Gold").
+                currencies.put(id.toLowerCase(Locale.ROOT), new Currency(id, Currency.Type.VAULT, null, null,
+                        cs.getString("display", id)));
+                continue;
+            }
+            if (!typeName.equals("ITEM")) {
+                log.warning("currencies." + id + ": unknown type '" + cs.getString("type") + "' (use item or vault), skipping.");
+                continue;
+            }
             Material material = Material.matchMaterial(cs.getString("material", ""));
             if (material == null || !material.isItem() || material.isAir()) {
                 log.warning("currencies." + id + ": unknown item material '" + cs.getString("material") + "', skipping.");
@@ -119,7 +141,7 @@ public final class ShopConfig {
             // How the coin is shown next to prices. Defaults to its name, or the material if it has none.
             String fallbackDisplay = plainName != null ? plainName : material.name().toLowerCase(Locale.ROOT).replace('_', ' ');
             currencies.put(id.toLowerCase(Locale.ROOT),
-                    new Currency(id, material, plainName, cs.getString("display", fallbackDisplay)));
+                    new Currency(id, Currency.Type.ITEM, material, plainName, cs.getString("display", fallbackDisplay)));
         }
         return currencies;
     }
@@ -194,16 +216,21 @@ public final class ShopConfig {
             return null;
         }
 
-        int price = is.getInt("price", 0);
-        if (price < 1) {
-            log.warning(path + ": 'price' must be a whole number of at least 1, skipping.");
-            return null;
-        }
-
         String currencyId = is.getString("currency", defaultCurrency).toLowerCase(Locale.ROOT);
         Currency currency = currencies.get(currencyId);
         if (currency == null) {
             log.warning(path + ": unknown currency '" + currencyId + "' (set 'currency:' or settings.default-currency), skipping.");
+            return null;
+        }
+
+        // Coins can't be split, so their price must be whole; Vault money may have cents.
+        double price = is.getDouble("price", 0);
+        if (price <= 0 || Double.isNaN(price) || Double.isInfinite(price)) {
+            log.warning(path + ": 'price' must be greater than 0, skipping.");
+            return null;
+        }
+        if (currency.type() == Currency.Type.ITEM && price != Math.floor(price)) {
+            log.warning(path + ": 'price' must be a whole number for item currency '" + currencyId + "', skipping.");
             return null;
         }
 

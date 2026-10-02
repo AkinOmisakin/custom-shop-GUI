@@ -1,9 +1,11 @@
 name: CustomShopGUI
-version: '${version}'
+version: '1.0'
 
 main: org.AkinToDeath.customShopGUI.CustomShopGUI
 api-version: '26.2'
 load: POSTWORLD
+# Optional: only needed for Vault-money currencies. Listing it makes Vault load before this plugin.
+softdepend: [Vault]
 
 commands:
   rpgshop:
