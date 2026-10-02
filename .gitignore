@@ -1,2 +1,28 @@
-.gradle
-gradle
+# --- Gradle ---
+.gradle/
+build/
+.kotlin/
+# keep the wrapper so a fresh clone can build
+!gradle/wrapper/gradle-wrapper.jar
+
+# --- IntelliJ IDEA ---
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# --- Eclipse / other IDE output ---
+bin/
+.classpath
+.project
+.settings/
+
+# --- Local Minecraft test servers (worlds, jars, logs, EULA) ---
+run/
+test-server/
+
+# --- Logs and OS files ---
+*.log
+.DS_Store
+Thumbs.db
